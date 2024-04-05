@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "ExtenAlert!",
+  "version": "1.0.0",
+  "description": "Malicious activity detection and Real-time protection",
+  "icons":{
+    "32": "logo192.png",
+    "48": "logo192.png",
+    "128": "logo192.png"
+  },
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": { 
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "notifications",
+    "tabs",
+    "storage",
+    "activeTab",
+    "scripting",
+    "webNavigation",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ]
+}
