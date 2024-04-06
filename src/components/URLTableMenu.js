@@ -44,7 +44,7 @@ function URLTableMenu() {
     return(
         <>
             <div class="mt-2 h-full w-full">
-                <Box sx={{ width: '100%', height:'100%',  backgroundColor:'#e0f2fe'}}>
+                <Box sx={{ width: '100%', height:'100%',  backgroundColor:'#e0f2fe', overflow: 'auto'}}>
                     <Box >
                         <Button 
                             sx={{
@@ -57,7 +57,7 @@ function URLTableMenu() {
                                     backgroundColor: value === 0 ? '#e0f2fe' : '#5ac8fa',
                                     boxShadow:'none'
                                 },
-                                fontSize: '10px'
+                                fontSize: '12px'
                             }} 
                             onClick={Tab1}
                             variant="contained">Whitelisted URLs
@@ -73,14 +73,14 @@ function URLTableMenu() {
                                     backgroundColor: value === 1 ? '#e0f2fe' : '#5ac8fa',
                                     boxShadow:'none'
                                 },
-                                fontSize: '10px'
+                                fontSize: '12px'
                             }} 
                             onClick={Tab2}
                             variant="contained">Protection History
                         </Button>
                     </Box>
-                    <CustomTabPanel value={value} index={0}>
-                        <WhitelistedUrls/>
+                    <CustomTabPanel value={value} index={0} className="h-10">
+                        <WhitelistedUrls/>                
                     </CustomTabPanel>
                     <CustomTabPanel value={value} index={1}>
                         <ProtectionHistory/>
