@@ -4,19 +4,29 @@ import Button from '@mui/material/Button';
 import URLTableMenu from '../components/URLTableMenu';
 
 function Popup() {
-    const [extensionStatus, setExtensionStatus] = useState(true);
-    const [status, setStatus] = useState('Active');
-    const [Url, setUrl] = useState(''); 
+    const statusInfo = localStorage.getItem('status');
+    const [extensionStatus, setExtensionStatus] = useState();
+    const [status, setStatus] = useState('');
+
+    useEffect(() => {
+        if (statusInfo === 'Inactive') {
+            setExtensionStatus(false);
+            setStatus('Inactive');
+        } else {
+            setExtensionStatus(true);
+            setStatus('Active');
+        }
+    }, [statusInfo]);
 
     const handleClickOFF = () => {
         setExtensionStatus(false);
         setStatus('Inactive');
-        console.log('extension is OFF')
+        localStorage.setItem('status', 'Inactive');
     }
     const handleClickON = () => {
         setExtensionStatus(true);
         setStatus('Active');
-        console.log('extension is ON')
+        localStorage.setItem('status', 'Active');
     }
 
     return (
