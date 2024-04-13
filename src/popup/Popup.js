@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import URLTableMenu from '../components/URLTableMenu';
+import ScanWebsite from '../components/ScanWebsite';
 
 function Popup() {
     const statusInfo = localStorage.getItem('status');
@@ -71,6 +72,7 @@ function Popup() {
                     variant="contained">ON
                 </Button>
             </div>     
+            <ScanWebsite/>
             <URLTableMenu/>                 
         </div>
     </>

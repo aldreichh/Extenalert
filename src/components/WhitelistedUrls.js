@@ -9,7 +9,9 @@ function WhitelistedUrls() {
     useEffect(() => {
         const localStorageData = JSON.parse(localStorage.getItem('URL')) || [];
         setData(localStorageData);
+        console.log(localStorageData)
     }, []);
+
 
     const handleURLChange = (e) => {
         setInputValue(e.target.value);
@@ -18,7 +20,7 @@ function WhitelistedUrls() {
     const handleAddURL = () => {
         if (inputValue.trim() !== '') {
             const newData = {
-                id: Date.now(), // Assign a unique ID
+                id: Date.now(), 
                 url: inputValue
             };
             setData(prevData => [...prevData, newData]);
@@ -31,7 +33,7 @@ function WhitelistedUrls() {
     const handleDeleteURL = (id) => {
         const newData = data.filter(item => item.id !== id);
         setData(newData);
-        localStorage.setItem('URL', JSON.stringify(newData)); // Update localStorage with newData, not data
+        localStorage.setItem('URL', JSON.stringify(newData)); 
     }
 
     return(
