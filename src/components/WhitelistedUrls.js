@@ -25,19 +25,14 @@ function WhitelistedUrls() {
                 // Add https://www. at the beginning and / at the end
                 formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
             }
-    
-            // Check if the URL already exists
-            if (!data.some(item => item.url === formattedURL)) {
-                const newData = {
-                    id: Date.now(), 
-                    url: formattedURL
-                };
-                setData(prevData => [...prevData, newData]);
-                const localStorageData = [...data, newData];
-                chrome.storage.local.set({ 'URL': localStorageData });
-                localStorage.setItem('URL', JSON.stringify(localStorageData));
-            }
-    
+            const newData = {
+                id: Date.now(), 
+                url: formattedURL
+            };
+            setData(prevData => [...prevData, newData]);
+            const localStorageData = [...data, newData];
+            chrome.storage.local.set({ 'URL': localStorageData });
+            localStorage.setItem('URL', JSON.stringify(localStorageData));
             setInputValue('');
         }
     }
