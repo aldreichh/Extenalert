@@ -8,7 +8,7 @@ function Popup() {
     const statusInfo = localStorage.getItem('status');
     const [extensionStatus, setExtensionStatus] = useState();
     const [status, setStatus] = useState('');
-
+    
     useEffect(() => {
         if (statusInfo === 'Inactive') {
             setExtensionStatus(false);

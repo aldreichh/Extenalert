@@ -1,12 +1,27 @@
 /*global chrome*/
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import axios from 'axios';
 
 const YourComponent = () => {
   const [api, setAPI] = useState('e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8');
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
+  const [lastVisitedUrl, setLastVisitedUrl] = useState('');
+  const [userAnswer, setUserAnswer] = useState(null);
 
+  useEffect(() => {
+        // Retrieve the URL from Chrome storage
+        chrome.storage.sync.get(['lastVisitedUrl', 'userAnswer'], function(result) {
+            if (result.lastVisitedUrl) {
+                setLastVisitedUrl(result.lastVisitedUrl);
+            }
+            if (result.userAnswer) {
+                setUserAnswer(result.userAnswer);
+            }
+        });
+  }, []); 
+  
+  /*
   const handleClick = async () => {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       const currentUrl = tabs[0].url;
@@ -25,24 +40,19 @@ const YourComponent = () => {
         setError(error.response.data.error);
         setReport(null);
       } 
-
     });
   };
+  */
 
-  const handleNotif = () => {
-    const confirmed = window.confirm('This website has been detected as malicious, do you want to add this to blocklisted URLs?');
-          if (confirmed) {
-            console.log('User clicked "OK"');
-          } else {
-            console.log('User clicked "Cancel"');
-          }
-  }
 
   return (
-    <div>
-      <button onClick={handleClick}>Send Request</button>
-      <button onClick={handleNotif}>show notification example</button>
-    </div>
+    <>
+    <p>Last visited URL: {lastVisitedUrl}</p>
+    <p>User Prompt Answer: {userAnswer}</p>
+      <div>
+        <button >Send VirusTotal Request</button>
+      </div>
+    </>
   );
 
 };

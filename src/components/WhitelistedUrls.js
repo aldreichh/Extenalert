@@ -1,3 +1,4 @@
+/*global chrome*/
 import React, { useState, useEffect} from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -12,20 +13,31 @@ function WhitelistedUrls() {
         console.log(localStorageData)
     }, []);
 
-
     const handleURLChange = (e) => {
         setInputValue(e.target.value);
     }
 
     const handleAddURL = () => {
         if (inputValue.trim() !== '') {
-            const newData = {
-                id: Date.now(), 
-                url: inputValue
-            };
-            setData(prevData => [...prevData, newData]);
-            const localStorageData = [...data, newData];
-            localStorage.setItem('URL', JSON.stringify(localStorageData));
+            let formattedURL = inputValue.trim().toLowerCase(); // Convert to lowercase
+            // Check if the URL does not start with http:// or https://
+            if (!/^https?:\/\//i.test(formattedURL)) {
+                // Add https://www. at the beginning and / at the end
+                formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
+            }
+    
+            // Check if the URL already exists
+            if (!data.some(item => item.url === formattedURL)) {
+                const newData = {
+                    id: Date.now(), 
+                    url: formattedURL
+                };
+                setData(prevData => [...prevData, newData]);
+                const localStorageData = [...data, newData];
+                chrome.storage.local.set({ 'URL': localStorageData });
+                localStorage.setItem('URL', JSON.stringify(localStorageData));
+            }
+    
             setInputValue('');
         }
     }
@@ -33,7 +45,13 @@ function WhitelistedUrls() {
     const handleDeleteURL = (id) => {
         const newData = data.filter(item => item.id !== id);
         setData(newData);
-        localStorage.setItem('URL', JSON.stringify(newData)); 
+        localStorage.setItem('URL', JSON.stringify(newData));
+        
+        chrome.storage.local.get('URL', function(result) {
+            const storedData = result.URL || [];
+            const updatedData = storedData.filter(item => item.id !== id);
+            chrome.storage.local.set({ 'URL': updatedData });
+        });
     }
 
     return(
@@ -44,7 +62,7 @@ function WhitelistedUrls() {
                         sx={{
                             width:'70%'
                         }}
-                        label="Input URL"
+                        label="Input URL (ex. google.com)"
                         size="small"
                         variant="outlined"
                         onChange={handleURLChange}
