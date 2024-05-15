@@ -9,7 +9,6 @@ function App(){
     <Router>
       <Routes>
         <Route path="/index.html" element={<Popup />} />
-        <Route path="/prompt" element={<Prompt />} />
       </Routes>
     </Router> 
   );

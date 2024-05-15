@@ -12,27 +12,81 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
             return;
         }
         
-        for (let i = 0; i < storedData.length; i++) {
-            if(currentUrl === storedData[i].url) {
-                console.log(storedData[i].url);
-                return;
-            }
+        const alreadyVisited = storedData.some(item => item.url === currentUrl);
+        if (alreadyVisited) {
+            return;
         }
 
+        
         // If no match is found, show the prompt
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {prompt: true}, function(response) {
+        chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, { prompt: true }, async function(response) {
                 if (response && response.answer !== undefined) {
                     chrome.storage.local.set({ 'userAnswer': response.answer });
                     console.log('User answer:', response.answer);
+        
+                    if(response.answer===true){
+                        // Fetch data from the URL
+                        const api = 'e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8'; 
+                        const url = `http://localhost:5000/url-report?apikey=${api}&resource=${currentUrl}&allinfo=false&scan=0`;
+            
+                        try {
+                            const fetchResponse = await fetch(url);
+                            const data = await fetchResponse.json();
+                            const threatLevel = getThreatLevel(data);
+                            if (threatLevel === 'Low Threat Level') {
+                                chrome.tabs.sendMessage(tabs[0].id, { threatLevel: threatLevel }, function(response) {
+                                    console.log("User response from Low Threat Level script:", response.answer, currentUrl);
+                                    if(response.answer===true){
+                                        storedData.push({ url: currentUrl });
+                                        chrome.storage.local.set({ 'URL': storedData });
+                                        console.log(storedData)
+                                    }
+                                });
+                            }
+                            else if (threatLevel === 'Moderate Threat Level') {
+                                chrome.tabs.sendMessage(tabs[0].id, { threatLevel: threatLevel }, function(response) {
+                                    console.log("User response from Moderate Threat Level script:", response.answer);
+                                });
+                            }
+                            else if (threatLevel === 'High Threat Level') {
+                                chrome.tabs.sendMessage(tabs[0].id, { threatLevel: threatLevel }, function(response) {
+                                    console.log("User response from High Threat Level script:", response.answer);
+                                });
+                            }
+                            console.log(threatLevel);
+                            console.log('Data from URL:', data);
+                        } catch (error) {
+                            const promptError = 'An error has occured.';
+                            chrome.tabs.sendMessage(tabs[0].id, { promptError: promptError }, function(response) {
+                                console.log("User Response", response.answer);
+                            });
+                        }
+                    }
+                    else{
+                        console.log('Scan cancelled')
+                    }
                 }
             });
         });
+        
 
         chrome.storage.sync.set({ 'lastVisitedUrl': currentUrl });
         console.log('Current URL:', currentUrl);
     });
 });
+
+function getThreatLevel(data) {
+    const numPhishingDetected = Object.values(data.scans).filter(scan => scan.detected && scan.result === 'phishing site').length;
+
+    if (numPhishingDetected === 0) {
+        return "Low Threat Level";
+    } else if (numPhishingDetected <= 3) {
+        return "Moderate Threat Level";
+    } else {
+        return "High Threat Level";
+    }
+}
 
 /*
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {

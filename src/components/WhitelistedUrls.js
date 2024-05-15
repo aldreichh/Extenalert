@@ -26,7 +26,6 @@ function WhitelistedUrls() {
                 formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
             }
             const newData = {
-                id: Date.now(), 
                 url: formattedURL
             };
             setData(prevData => [...prevData, newData]);
