@@ -54,7 +54,9 @@ function WhitelistedUrls() {
                 <div className="flex">
                     <TextField
                         sx={{
-                            width:'70%'
+                            width:'70%',
+                            backgroundColor: 'white',
+                            borderRadius: '5px'
                         }}
                         label="Input URL (ex. google.com)"
                         size="small"

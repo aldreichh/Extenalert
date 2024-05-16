@@ -1,9 +1,7 @@
 /*global chrome*/
 import React, { useState, useEffect} from 'react';
-import axios from 'axios';
 
 const YourComponent = () => {
-  const [api, setAPI] = useState('e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8');
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
   const [lastVisitedUrl, setLastVisitedUrl] = useState('');

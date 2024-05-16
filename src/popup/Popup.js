@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import URLTableMenu from '../components/URLTableMenu';
 import ScanWebsite from '../components/ScanWebsite';
+import AddAPIKey from '../components/AddAPIKey';
 
 function Popup() {
     const statusInfo = localStorage.getItem('status');
@@ -69,10 +70,12 @@ function Popup() {
                     }} 
                     disabled={extensionStatus} 
                     onClick={handleClickON}
+                    title="Phishing "
                     variant="contained">ON
                 </Button>
             </div>     
             <ScanWebsite/>
+            <AddAPIKey/>
             <URLTableMenu/>                 
         </div>
     </>

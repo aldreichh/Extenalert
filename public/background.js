@@ -1,11 +1,12 @@
 console.log('Background script executing...');
 
-let indexTabId = null;
 
 chrome.webNavigation.onCompleted.addListener(function(details) {
-    chrome.storage.local.get('URL', function(result) {
+    chrome.storage.local.get(['URL', 'UserAPIkey'],function(result) {
         const storedData = result.URL || []; 
+        const api = result.UserAPIkey || 'e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8';
         console.log(storedData);
+        console.log(api);
 
         const currentUrl = details.url;
         if (!currentUrl || currentUrl.match(/^chrome:\/\//) || currentUrl.startsWith("about:blank")) {
@@ -26,8 +27,7 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
                     console.log('User answer:', response.answer);
         
                     if(response.answer===true){
-                        // Fetch data from the URL
-                        const api = 'e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8'; 
+                        // Fetch data from the URL 
                         const url = `http://localhost:5000/url-report?apikey=${api}&resource=${currentUrl}&allinfo=false&scan=0`;
             
                         try {
@@ -87,6 +87,8 @@ function getThreatLevel(data) {
         return "High Threat Level";
     }
 }
+
+//let indexTabId = null;
 
 /*
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
