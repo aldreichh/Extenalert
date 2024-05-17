@@ -91,7 +91,7 @@ function WhitelistedUrls() {
                         }} 
                         onClick={handleAddURL}
                     >
-                        Add URL
+                        Add
                     </Button>
                 </div>
                 <div class="mt-2 overflow-auto h-50">
