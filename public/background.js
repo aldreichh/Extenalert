@@ -83,17 +83,10 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
                                             chrome.storage.local.set({ 'BlacklistedURLs' : blacklistedURLs });
                                             console.log(blacklistedURLs);
                                             //Close the tab
-                                            chrome.tabs.sendMessage(tabs[0].id, { threatDetected: phishingURLs }, function(response) {
-                                                console.log(response.answer);
-                                                if(response.answer===true || response.answer===false || response.answer===undefined ){
-                                                    const confirmation = "success";
-                                                    chrome.tabs.sendMessage(tabs[0].id, { confirmation: confirmation }, function(response) {});
-                                                    const tabId = tabs[0].id;
-                                                    chrome.tabs.remove(tabId, function() {
-                                                    console.log(`Tab with ID ${tabId} has been closed.`);
-                                                    return;
-                                                    });
-                                                }
+                                            const tabId = tabs[0].id;
+                                            chrome.tabs.remove(tabId, function() {
+                                            console.log(`Tab with ID ${tabId} has been closed.`);
+                                            return;
                                             });
                                         }
                                         else{
@@ -111,17 +104,10 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
                                             chrome.storage.local.set({ 'BlacklistedURLs' : blacklistedURLs });
                                             console.log(blacklistedURLs);
                                             //Close the tab
-                                            chrome.tabs.sendMessage(tabs[0].id, { threatDetected: phishingURLs }, function(response) {
-                                                console.log(response.answer);
-                                                if(response.answer===true || response.answer===false || response.answer===undefined ){
-                                                    const confirmation = "success";
-                                                    chrome.tabs.sendMessage(tabs[0].id, { confirmation: confirmation }, function(response) {});
-                                                    const tabId = tabs[0].id;
-                                                    chrome.tabs.remove(tabId, function() {
-                                                    console.log(`Tab with ID ${tabId} has been closed.`);
-                                                    return;
-                                                    });
-                                                }
+                                            const tabId = tabs[0].id;
+                                            chrome.tabs.remove(tabId, function() {
+                                            console.log(`Tab with ID ${tabId} has been closed.`);
+                                            return;
                                             });
                                         }
                                         else{
