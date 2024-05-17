@@ -5,12 +5,17 @@ import Button from '@mui/material/Button';
 
 function WhitelistedUrls() {
     const [data, setData] = useState([]);
+    const [blacklisted, setBlacklisted] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [labelMessage, setLabelMessage] = useState('Input URL (ex. google.com)');
 
     useEffect(() => {
-        const localStorageData = JSON.parse(localStorage.getItem('URL')) || [];
-        setData(localStorageData);
-        console.log(localStorageData)
+        chrome.storage.local.get(['WhitelistedURLs', 'BlacklistedURLs'] , function(result) {
+            const chromeWhiteLocalStorage = result.WhitelistedURLs || [];
+            const chromeBlockLocalStorage = result.BlacklistedURLs || [];
+            setData(chromeWhiteLocalStorage);
+            setBlacklisted(chromeBlockLocalStorage);
+        });
     }, []);
 
     const handleURLChange = (e) => {
@@ -25,26 +30,34 @@ function WhitelistedUrls() {
                 // Add https://www. at the beginning and / at the end
                 formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
             }
-            const newData = {
-                url: formattedURL
-            };
-            setData(prevData => [...prevData, newData]);
-            const localStorageData = [...data, newData];
-            chrome.storage.local.set({ 'URL': localStorageData });
-            localStorage.setItem('URL', JSON.stringify(localStorageData));
-            setInputValue('');
+            const exists = blacklisted.some(item => item.url === formattedURL);
+            if(!exists){
+                const newData = {
+                    id: Date.now(), 
+                    url: formattedURL
+                };
+                setData(prevData => [...prevData, newData]);
+                const localStorageData = [...data, newData];
+                chrome.storage.local.set({ 'WhitelistedURLs': localStorageData });
+                localStorage.setItem('WhitelistedURLs', JSON.stringify(localStorageData));
+                setLabelMessage('Input URL (ex. google.com)')
+                setInputValue('');
+            }
+            else{
+                setLabelMessage('URL exists in Blacklisted URLs');
+            }
         }
     }
 
     const handleDeleteURL = (id) => {
         const newData = data.filter(item => item.id !== id);
         setData(newData);
-        localStorage.setItem('URL', JSON.stringify(newData));
+        localStorage.setItem('WhitelistedURLs', JSON.stringify(newData));
         
-        chrome.storage.local.get('URL', function(result) {
-            const storedData = result.URL || [];
+        chrome.storage.local.get('WhitelistedURLs', function(result) {
+            const storedData = result.WhitelistedURLs || [];
             const updatedData = storedData.filter(item => item.id !== id);
-            chrome.storage.local.set({ 'URL': updatedData });
+            chrome.storage.local.set({ 'WhitelistedURLs': updatedData });
         });
     }
 
@@ -58,7 +71,7 @@ function WhitelistedUrls() {
                             backgroundColor: 'white',
                             borderRadius: '5px'
                         }}
-                        label="Input URL (ex. google.com)"
+                        label={labelMessage}
                         size="small"
                         variant="outlined"
                         onChange={handleURLChange}

@@ -55,6 +55,7 @@ function Popup() {
                     }} 
                     disabled={!extensionStatus} 
                     onClick={handleClickOFF}
+                    title="Deactive Phishing and Drive-by downloads detection"
                     variant="contained">OFF
                 </Button>
                 <Button 
@@ -70,7 +71,7 @@ function Popup() {
                     }} 
                     disabled={extensionStatus} 
                     onClick={handleClickON}
-                    title="Phishing "
+                    title="Activate Phishing and Drive-by downloads detection"
                     variant="contained">ON
                 </Button>
             </div>     

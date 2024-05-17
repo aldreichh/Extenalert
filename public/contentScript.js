@@ -26,4 +26,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         const userResponse = confirm("An error has occured.");   
         sendResponse({ answer: userResponse }); 
     }
+    else if(message.threatDetected){
+        const userResponse = confirm("This URL has been blocked by ExtenAlert!");   
+        sendResponse({ answer: userResponse }); 
+    }
+    else if(message.confirmation === "success"){
+        const userResponse = confirm("Successfully added!");   
+        sendResponse({ answer: userResponse }); 
+    }
 });

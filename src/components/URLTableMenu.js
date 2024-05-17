@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import WhitelistedUrls from './WhitelistedUrls';
-import ProtectionHistory from './ProtectionHistory';
+import BlacklistedUrls from './BlacklistedUrls';
 
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -76,14 +76,14 @@ function URLTableMenu() {
                                 fontSize: '12px'
                             }} 
                             onClick={Tab2}
-                            variant="contained">Protection History
+                            variant="contained">Blacklisted URLs
                         </Button>
                     </Box>
                     <CustomTabPanel value={value} index={0} className="h-10">
                         <WhitelistedUrls/>                
                     </CustomTabPanel>
-                    <CustomTabPanel value={value} index={1}>
-                        <ProtectionHistory/>
+                    <CustomTabPanel value={value} index={1} className="h-10">
+                        <BlacklistedUrls/>
                     </CustomTabPanel>
                 </Box>
             </div>

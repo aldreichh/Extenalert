@@ -54,7 +54,7 @@ function AddAPIKey () {
                     backgroundColor: APIkey ? '#ef4444' : '#4ade80',
                     width: '30%', 
                     marginLeft: '5px',
-                    borderRadius: '10px',
+                    borderRadius: '5px',
                     boxShadow: 'none',
                     '&:hover': {
                         backgroundColor: APIkey ? '#f87171' : '#22c55e',
