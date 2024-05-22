@@ -60,6 +60,7 @@ document.addEventListener('click', (event) => {
   */
 
 //DRIVE-BY DOWNLOAD FEATURE
+/*
 document.addEventListener('click', (event) => {
 // Use event delegation to catch clicks on all elements
 let element = event.target;
@@ -73,7 +74,25 @@ if (element && (element.href || element.download)) {
     chrome.runtime.sendMessage({ type: "USER_INITIATED_DOWNLOAD" });
 }
 });
+*/
 
+document.addEventListener('click', (event) => {
+    let element = event.target;
+  
+    // Traverse up the DOM tree to find the actual clickable element
+    while (element && !element.href && !element.download) {
+      element = element.parentElement;
+    }
+  
+    if (element && (element.href || element.download)) {
+      try {
+        // Send the URL of the clicked element to the background script
+        chrome.runtime.sendMessage({ type: 'userClick', url: element.href || window.location.href });
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
+    }
+  });
 
 
 //FEATURE EXTRACTION USING URL PARSER AND REGEX
