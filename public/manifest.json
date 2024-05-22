@@ -20,7 +20,10 @@
     "storage",
     "activeTab",
     "scripting",
-    "webNavigation"
+    "webNavigation",
+    "downloads",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' http://localhost:5000; object-src 'self'"

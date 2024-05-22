@@ -7,6 +7,7 @@ import AddAPIKey from '../components/AddAPIKey';
 
 function Popup() {
     const statusInfo = localStorage.getItem('status');
+    chrome.storage.local.set({ 'ExtensionStatus': statusInfo });
     const [extensionStatus, setExtensionStatus] = useState();
     const [status, setStatus] = useState('');
     
