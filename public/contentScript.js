@@ -36,6 +36,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         const userResponse = alert("Successfully added!");   
         sendResponse({ answer: userResponse }); 
     }
+    else if(message.isDrivebyDownload){
+        const userResponse = confirm("ExtenAlert detected a drive-by download. Do you want to continue downloading this file?");   
+        sendResponse({ answer: userResponse }); 
+    }
 });
 
 /*
@@ -75,7 +79,6 @@ if (element && (element.href || element.download)) {
 }
 });
 */
-
 document.addEventListener('click', (event) => {
     let element = event.target;
   
@@ -87,13 +90,16 @@ document.addEventListener('click', (event) => {
     if (element && (element.href || element.download)) {
       try {
         // Send the URL of the clicked element to the background script
-        chrome.runtime.sendMessage({ type: 'userClick', url: element.href || window.location.href });
+        chrome.runtime.sendMessage({ type: 'userClick', url: element.href || window.location.href }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error sending message:', chrome.runtime.lastError.message);
+          }
+        });
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('Error sending message:', error.message);
       }
     }
-  });
-
+});
 
 //FEATURE EXTRACTION USING URL PARSER AND REGEX
 /*

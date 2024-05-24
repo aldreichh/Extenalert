@@ -158,7 +158,6 @@ function getThreatLevel(data) {
     }
 }
 
-
 //DRIVE-BY DOWNLOAD FEATURE
 let userInitiated = false;
 
@@ -210,17 +209,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Listen for downloads
 chrome.downloads.onCreated.addListener((downloadItem) => {
-  const currentTime = Date.now();
-  const timeDifference = currentTime - userClickTimestamp;
+    const currentTime = Date.now();
+    const timeDifference = currentTime - userClickTimestamp;
+    // Define a threshold (e.g., 5 seconds) to consider a download as user-initiated
+    const userInitiatedThreshold = 5000;
 
-  // Define a threshold (e.g., 5 seconds) to consider a download as user-initiated
-  const userInitiatedThreshold = 5000;
-
-  if (timeDifference <= userInitiatedThreshold && downloadItem.referrer === lastClickedElementUrl) {
-    console.log(`Download ${downloadItem.id} is likely user-initiated.`);
-  } else {
-    console.log(`Download ${downloadItem.id} is likely a drive-by download.`);
-    // Optionally, cancel the download if it is considered drive-by
-    // chrome.downloads.cancel(downloadItem.id);
-  }
+    if (timeDifference <= userInitiatedThreshold && (downloadItem.url === lastClickedElementUrl || downloadItem.referrer === lastClickedElementUrl)) {
+        console.log(`Download ${downloadItem.id} is likely user-initiated.`);
+    } else {
+        console.log(`Download ${downloadItem.id} is likely a drive-by download.`);
+    }
 });
