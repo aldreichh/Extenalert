@@ -23,12 +23,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     } else if (request.confirmation === "success") {
         alert("Successfully added!");
         sendResponse({ answer: true });
+    } else if (request.isDriveByDownload === "isDriveByDownload") {
+        alert("Successfully added!");
+        sendResponse({ answer: true });
     } 
-    
-    //else if (request.isDrivebyDownload) {
-      //alert("ExtenAlert detected a drive-by download and cancelled the download.");
-      //sendResponse({ answer: true });
-    //}
+});
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.isDriveByDownload === true) {
+        alert("Drive-by Download has been detected!");
+        sendResponse({ answer: true });
+    } 
 });
 
 // contentscript.js
@@ -47,3 +52,4 @@ document.addEventListener('click', (event) => {
         });
     }
 });
+

@@ -22,6 +22,7 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             if (!baseUrl || baseUrl.match(/^chrome:\/\//) || 
                 baseUrl.startsWith("about:blank") || 
                 baseUrl.startsWith("about://") || 
+                baseUrl.startsWith("http://localhost/") || 
                 baseUrl.startsWith("file:///")) {
                 return;
             }
@@ -105,7 +106,7 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
                                         const listToUpdate = status === 'benign' ? storedData : blacklistedURLs;
                                         listToUpdate.push({ id: Date.now(), url: baseUrl });
                                         const storageKey = status === 'benign' ? 'WhitelistedURLs' : 'BlacklistedURLs';
-
+                                        
                                         await chrome.storage.local.set({ [storageKey]: listToUpdate });
                                         console.log(listToUpdate);
 
@@ -177,7 +178,8 @@ async function addDataToServer(url, status) {
 // Function to check if a URL is whitelisted
 async function checkWhitelist(url) {
     try {
-        const response = await fetch(`http://localhost:5000/check-whitelist?url=${encodeURIComponent(url)}`);
+        const response = await fetch(`http://localhost:5000/check-whitelist?url=
+        ${encodeURIComponent(url)}`);
         const data = await response.json();
         return data.isWhitelisted;
     } catch (error) {
@@ -185,11 +187,11 @@ async function checkWhitelist(url) {
         return false;
     }
 }
-
 // Function to check if a URL is blacklisted
 async function checkBlacklist(url) {
     try {
-        const response = await fetch(`http://localhost:5000/check-blacklist?url=${encodeURIComponent(url)}`);
+        const response = await fetch(`http://localhost:5000/check-blacklist?url=
+        ${encodeURIComponent(url)}`);
         const data = await response.json();
         return data.isBlacklisted;
     } catch (error) {
@@ -212,8 +214,8 @@ function getThreatLevel(data) {
 }
 
 //Drive-by Download Detection
-// background.js
 const userInitiatedDownloads = new Set();
+let isDriveByDownload = false;
 
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -230,8 +232,20 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
         userInitiatedDownloads.delete(downloadItem.url);
     } else {
         console.log(`Drive-by download detected: ${downloadItem.url}`);
-        // Optionally, you can cancel the download here
-        console.log(downloadItem);
+        isDriveByDownload = true;
+        handleDriveByDownload(isDriveByDownload);
+        // Cancel the download
         chrome.downloads.cancel(downloadItem.id);
     }
 });
+
+function handleDriveByDownload(isDriveByDownload) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (tabs.length > 0 && isDriveByDownload) {
+            chrome.tabs.sendMessage(tabs[0].id, { isDriveByDownload: true }, function(response) {
+                console.log(response?.answer);
+            });
+        }
+    });
+}
+
