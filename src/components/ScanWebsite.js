@@ -32,8 +32,10 @@ function ScanWebsite() {
     const [buttonEnable, setbuttonEnable] = useState(false);
     const [buttonVisible, setButtonVisible] = useState(false);
     const [message, setMessage] = useState('SEND DATA TO EXTENALERT!');
+    const [promptMessage, setPromptMessage] = useState('');
     const [isMatched, setIsMatched] = useState(false);
     const [localData, setLocalData] = useState([]);
+    const [alreadyScanned, setAlreadyScanned] =useState(false);
     
     useEffect(() => {
         chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
@@ -54,7 +56,8 @@ function ScanWebsite() {
             /secure/i,                     // Contains "secure"
             /confirm/i,                    // Contains "confirm"
             /webscr/i,                     // Contains "webscr" (common in phishing URLs)
-            /bank|paypal|apple|google/i,   // Contains common target keywords
+            /\b(bank|paypal|apple)\b/i,    // Contains common target keywords excluding "google"
+            /\bgoogle-(login|secure|account|verify)\b/i, // More specific patterns for "google"
             /\d{2,}\.\d{2,}\.\d{2,}\.\d{2,}/,  // IP address in URL
             /@/,                           // @ symbol in URL
             /-|_/,                         // Hyphen or underscore in domain
@@ -67,6 +70,7 @@ function ScanWebsite() {
         // Parse the URL using the URI library
         const parsedUrl = URI(currentUrl);
         const domain = parsedUrl.hostname();
+        console.log(domain);
         // Check if the domain is in the whitelist
         const isWhitelisted = await checkWhitelist(currentUrl);
         // Check if the domain is in the blacklist
@@ -77,6 +81,8 @@ function ScanWebsite() {
         if (isCurrentUrlStored) {
             setbuttonEnable(true); // Disable the button if currentUrl is already stored
             setMessage('This URL has already been reported');
+            setAlreadyScanned(true);
+            return;
         }
         else if (isBlacklisted) {
             console.log('blacklisted')
@@ -84,17 +90,23 @@ function ScanWebsite() {
             setStatus('phishing');
             setIsMatched(true);
             setMessage('Already in the Database');
+            setPromptMessage('Scanned using ExtenAlert! Database, This URL is phishing.');
         } else if (isWhitelisted) {
             console.log('whitelisted');
             isPhishingUrl = false;
             setStatus('benign');
             setIsMatched(true);
+            setPromptMessage('Scanned using ExtenAlert! Database, This URL is benign.');
             setMessage('Already in the Database');
         } else {
             console.log('via regex');
             // Check the URL against the regex patterns if not whitelisted or blacklisted
             isPhishingUrl = phishingPatterns.some(pattern => pattern.test(currentUrl) || pattern.test(domain));
             setStatus(isPhishingUrl ? 'phishing' : 'benign');
+            setPromptMessage(
+                isPhishingUrl ? 
+                'Warning: This URL may be a phishing site.' :
+                'This URL seems safe.');
             setIsMatched(false);
         }
         // Set the phishing status
@@ -102,14 +114,17 @@ function ScanWebsite() {
         setButtonVisible(true);
     };
 
-    const handleSendData = async () => {
+    const handleSendData = async (data) => {
+        const status = data.status;
+        const parsedUrl = new URL(currentUrl);
+        const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}/`;
         try {
             const response = await fetch('http://localhost:5000/add-data', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url: currentUrl, status }),
+                body: JSON.stringify({ url: baseUrl, status: status}),
             });
             const data = await response.json();
             if (response.ok) {
@@ -119,7 +134,7 @@ function ScanWebsite() {
     
                 // Store data in localStorage
                 const storedData = JSON.parse(localStorage.getItem('sentData')) || [];
-                storedData.push({ url: currentUrl, status });
+                storedData.push({ url: currentUrl, status: status });
                 localStorage.setItem('sentData', JSON.stringify(storedData));
             } else {
                 console.error('Failed to add data:', data.error);
@@ -150,36 +165,65 @@ function ScanWebsite() {
                 > 
                     Scan This Website
                 </Button>
-                {isPhishing !== null && (
+                {isPhishing === null ? (
+                    <div>
+                    {alreadyScanned ? (
+                        <p style={{ color: 'green' }}>This URL has already been reported</p>
+                    ) : (
+                        <p style={{ color: 'red' }}></p>
+                    )}
+                    </div>
+                ) : (
                     <div className="mt-2 w-full">
                         {isPhishing ? (
-                            <p style={{ color: 'red' }}>Warning: This URL may be a phishing site.</p>
+                            <p style={{ color: 'red' }}>{promptMessage}</p>
                         ) : (
-                            <p style={{ color: 'green' }}>This URL seems safe.</p>
+                            <p style={{ color: 'green' }}>{promptMessage}</p>
                         )}
                         {currentUrl}
                     </div>
                 )}
                 {buttonVisible && (  // Conditionally render the button
-                    <Button
-                        variant="contained"
-                        disabled={buttonEnable || isMatched}
-                        sx={{
-                            marginTop: '2px',
-                            padding: '5px',
-                            width: '100%', 
-                            borderRadius: '0',
-                            backgroundColor: '#4ade80',
-                            boxShadow:'none',
-                            '&:hover': {
-                                backgroundColor: '#22c55e',
-                                boxShadow:'none'
-                            },
-                        }} 
-                        onClick={handleSendData}
-                    > 
-                        {message}
-                    </Button>
+                    <>
+                        <Button
+                            variant="contained"
+                            disabled={buttonEnable || isMatched}
+                            sx={{
+                                marginTop: '2px',
+                                padding: '5px',
+                                width: '50%', 
+                                borderRadius: '0',
+                                backgroundColor: '#f87171',
+                                boxShadow: 'none',
+                                '&:hover': {
+                                    backgroundColor: '#ef4444',
+                                    boxShadow: 'none'
+                                },
+                            }} 
+                            onClick={() => handleSendData({status: 'phishing' })}
+                        > 
+                            SEND AS UNSAFE
+                        </Button>
+                        <Button
+                            variant="contained"
+                            disabled={buttonEnable || isMatched}
+                            sx={{
+                                marginTop: '2px',
+                                padding: '5px',
+                                width: '50%', 
+                                borderRadius: '0',
+                                backgroundColor: '#4ade80',
+                                boxShadow: 'none',
+                                '&:hover': {
+                                    backgroundColor: '#22c55e',
+                                    boxShadow: 'none'
+                                },
+                            }} 
+                            onClick={() => handleSendData({status: 'benign' })}
+                        > 
+                            SEND AS SAFE
+                        </Button>
+                    </>
                 )}
             </div>
         </>

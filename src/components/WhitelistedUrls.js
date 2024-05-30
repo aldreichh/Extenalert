@@ -22,6 +22,53 @@ function WhitelistedUrls() {
         setInputValue(e.target.value);
     }
 
+    const handleSendData = async () => {
+        const status = 'benign';
+        let baseUrl = '';
+    
+        if (inputValue.trim() !== '') {
+            let formattedURL = inputValue.trim().toLowerCase(); // Convert to lowercase
+            // Check if the URL does not start with http:// or https://
+            if (!/^https?:\/\//i.test(formattedURL)) {
+                // Add https://www. at the beginning and / at the end
+                formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
+            }
+            baseUrl = formattedURL;
+        }
+    
+        // Retrieve the current whitelist from local storage
+        const whitelist = JSON.parse(localStorage.getItem('whitelisted_urls')) || [];
+    
+        // Check if baseUrl exists in the whitelist
+        if (whitelist.includes(baseUrl)) {
+            console.log('Base URL already exists in local storage:', baseUrl);
+            return; // Exit the function as the baseUrl already exists
+        }
+    
+        try {
+            const response = await fetch('http://localhost:5000/add-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: baseUrl, status: status }),
+            });
+    
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Data added successfully:', data);
+                // Add baseUrl to the whitelist and store it in local storage
+                whitelist.push(baseUrl);
+                localStorage.setItem('whitelisted_urls', JSON.stringify(whitelist));
+            } else {
+                const data = await response.json();
+                console.error('Failed to add data:', data.error);
+            }
+        } catch (error) {
+            console.error('Error adding data to server:', error);
+        }
+    };
+
     const handleAddURL = () => {
         if (inputValue.trim() !== '') {
             let formattedURL = inputValue.trim().toLowerCase(); // Convert to lowercase
@@ -30,6 +77,7 @@ function WhitelistedUrls() {
                 // Add https://www. at the beginning and / at the end
                 formattedURL = 'https://www.' + formattedURL.replace(/^(www\.)/i, '') + '/';
             }
+            handleSendData();
             const exists = blacklisted.some(item => item.url === formattedURL);
             if(!exists){
                 const newData = {

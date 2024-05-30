@@ -1,7 +1,7 @@
 //PHISHING URL SCANNING USING VIRUSTOTAL API
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.prompt) {
-        const userInput = confirm('ExtenAlert wants to scan this URL. Do you want to continue?');
+        const userInput = confirm('ExtenAlert! wants to scan this URL. Do you want to continue?');
         sendResponse({ answer: userInput });
     } else if (request.threatLevel) {
         let message = "";
@@ -10,10 +10,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         } else if (request.threatLevel === "Moderate Threat Level") {
             message = "Scan completed. This URL is considered a Moderate Threat Level and is deemed UNSAFE for browsing. Do you want to add this URL to the blacklisted URLs and terminate this tab?";
         } else if (request.threatLevel === "High Threat Level") {
-            message = "Scan completed. This URL is considered a High Threat Level and is deemed UNSAFE for browsing. ExtenAlert recommends closing this tab immediately. Would you like to close this tab and add it to the blacklisted URLs?";
+            message = "Scan completed. This URL is considered a High Threat Level and is deemed UNSAFE for browsing. ExtenAlert! recommends closing this tab immediately. Would you like to close this tab and add it to the blacklisted URLs?";
         }
-        const userResponse = confirm(message);
-        sendResponse({ answer: userResponse });
+        if(request.threatLevel === "High Threat Level"){
+            const userResponse = alert(message);
+            sendResponse({ answer: userResponse });
+        }
+        else{
+            const userResponse = confirm(message);
+            sendResponse({ answer: userResponse });
+        }
+
     } else if (request.promptError === "An error has occurred.") {
         alert("An error has occurred.");
         sendResponse({ answer: true });

@@ -38,7 +38,6 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             if (alreadyVisited || isWhitelistedURL) {
                 return;
             }
-
             //Check if the URL is blacklisted
             const phishingURLs = blacklistedURLs.some(item => item.url === baseUrl);
             let isBlacklistedURL = false;
@@ -51,22 +50,19 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             //If the URL is in the blacklisted list
             if (phishingURLs || isBlacklistedURL) {
                 console.log('Block URL detected');
+                let checker = phishingURLs || isBlacklistedURL;
                 try {
                     //Show the alert prompt
                     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-                    await sendMessageWithResponse(tabs[0].id, { threatDetected: phishingURLs }, (response) => {
+                    await sendMessageWithResponse(tabs[0].id, { threatDetected: checker}, (response) => {
                         console.log(response?.answer);
-                        if (response?.answer === true) {
+                        if (response?.answer === true ) {
                             //Close the blocked URL tab
                             const tabId = tabs[0].id;
                             chrome.tabs.remove(tabId, () => {
                                 console.log(`Tab with ID ${tabId} has been closed.`);
                             });
                         }
-                        const tabId = tabs[0].id;
-                        chrome.tabs.remove(tabId, () => {
-                            console.log(`Tab with ID ${tabId} has been closed.`);
-                        });
                     });
                 } catch (error) {
                     console.error('Error sending message to content script:', error);
@@ -93,15 +89,25 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
 
                                 //Get the threat level by calling the getThreatLevel function
                                 const threatLevel = getThreatLevel(data);
-
+                                console.log(threatLevel);
+                                let threatLevel_data = null;
+                                if(threatLevel === "Low Threat Level"){
+                                    threatLevel_data = "Low";
+                                }
+                                else if(threatLevel === "Moderate Threat Level"){
+                                    threatLevel_data = "Moderate";
+                                }
+                                else{
+                                    threatLevel_data = "High";
+                                }
                                 //Show a prompt to notify the user the result of the scan
                                 await sendMessageWithResponse(tabs[0].id, { threatLevel: threatLevel }, async (response) => {
                                     console.log(`User response from ${threatLevel} script:`, response?.answer);
 
                                     //Send the result to ExtenAlert! database using the AddDataToServer function
-                                    if (response?.answer === true) {
+                                    if (response?.answer === true || response?.answer === undefined) {
                                         const status = threatLevel === 'Low Threat Level' ? 'benign' : 'phishing';
-                                        await addDataToServer(baseUrl, status);
+                                        await addDataToServer(baseUrl, status, threatLevel_data);
 
                                         const listToUpdate = status === 'benign' ? storedData : blacklistedURLs;
                                         listToUpdate.push({ id: Date.now(), url: baseUrl });
@@ -155,14 +161,15 @@ async function sendMessageWithResponse(tabId, message, callback) {
 }
 
 // Function to add data to server
-async function addDataToServer(url, status) {
+async function addDataToServer(url, status, threat_level) {
+    console.log(threat_level);
     try {
-        const response = await fetch('http://localhost:5000/add-data', {
+        const response = await fetch('http://localhost:5000/add-data-virustotal', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ url, status }),
+            body: JSON.stringify({ url, status, threat_level}),
         });
         const data = await response.json();
         if (response.ok) {
@@ -178,8 +185,7 @@ async function addDataToServer(url, status) {
 // Function to check if a URL is whitelisted
 async function checkWhitelist(url) {
     try {
-        const response = await fetch(`http://localhost:5000/check-whitelist?url=
-        ${encodeURIComponent(url)}`);
+        const response = await fetch(`http://localhost:5000/check-whitelist?url=${encodeURIComponent(url)}`);
         const data = await response.json();
         return data.isWhitelisted;
     } catch (error) {
@@ -190,8 +196,7 @@ async function checkWhitelist(url) {
 // Function to check if a URL is blacklisted
 async function checkBlacklist(url) {
     try {
-        const response = await fetch(`http://localhost:5000/check-blacklist?url=
-        ${encodeURIComponent(url)}`);
+        const response = await fetch(`http://localhost:5000/check-blacklist?url=${encodeURIComponent(url)}`);
         const data = await response.json();
         return data.isBlacklisted;
     } catch (error) {
