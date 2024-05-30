@@ -41,8 +41,13 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             //Check if the URL is blacklisted
             const phishingURLs = blacklistedURLs.some(item => item.url === baseUrl);
             let isBlacklistedURL = false;
+            let blacklisted_threatlevel = "";
             try {
-                isBlacklistedURL = await checkBlacklist(baseUrl);
+                const isBlacklistedURL = await checkBlacklist(baseUrl);
+                if (isBlacklistedURL) {
+                    blacklisted_threatlevel = await fetchThreatLevel(baseUrl);
+                    console.log(`Threat level for ${baseUrl}: ${blacklisted_threatlevel}`);
+                }
             } catch (error) {
                 console.error('Error checking blacklist:', error);
             }
@@ -50,20 +55,40 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             //If the URL is in the blacklisted list
             if (phishingURLs || isBlacklistedURL) {
                 console.log('Block URL detected');
-                let checker = phishingURLs || isBlacklistedURL;
+                //let checker = phishingURLs || isBlacklistedURL;
+                let checker = "";
                 try {
                     //Show the alert prompt
-                    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-                    await sendMessageWithResponse(tabs[0].id, { threatDetected: checker}, (response) => {
-                        console.log(response?.answer);
-                        if (response?.answer === true ) {
-                            //Close the blocked URL tab
-                            const tabId = tabs[0].id;
-                            chrome.tabs.remove(tabId, () => {
-                                console.log(`Tab with ID ${tabId} has been closed.`);
-                            });
-                        }
-                    });
+                    checker = "High";
+                    console.log(blacklisted_threatlevel);
+                    if(blacklisted_threatlevel==="High"){
+                        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                        await sendMessageWithResponse(tabs[0].id, { threatDetected: checker}, (response) => {
+                            console.log(response?.answer);
+                            if (response?.answer === true ) {
+                                //Close the blocked URL tab
+                                const tabId = tabs[0].id;
+                                chrome.tabs.remove(tabId, () => {
+                                    console.log(`Tab with ID ${tabId} has been closed.`);
+                                });
+                            }
+                        });
+                    }
+                    else if(blacklisted_threatlevel === "Moderate"){
+                        checker = "Moderate"
+                        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                        await sendMessageWithResponse(tabs[0].id, { threatDetected: checker}, (response) => {
+                            if (response?.answer === true ) {
+                                
+                            }
+                            else{
+                                const tabId = tabs[0].id;
+                                chrome.tabs.remove(tabId, () => {
+                                    console.log(`Tab with ID ${tabId} has been closed.`);
+                                });
+                            }
+                        });
+                    }
                 } catch (error) {
                     console.error('Error sending message to content script:', error);
                 }
@@ -159,6 +184,21 @@ async function sendMessageWithResponse(tabId, message, callback) {
         }
     }
 }
+
+// Function to fetch the threat level of a URL
+async function fetchThreatLevel(url) {
+    try {
+      const response = await fetch(`http://localhost:5000/check-threat-level?url=${encodeURIComponent(url)}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      return data.threatLevel;
+    } catch (error) {
+      console.error('Error fetching threat level:', error);
+      return 'Error fetching threat level';
+    }
+  }  
 
 // Function to add data to server
 async function addDataToServer(url, status, threat_level) {

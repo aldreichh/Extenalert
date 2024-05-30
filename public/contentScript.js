@@ -24,9 +24,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     } else if (request.promptError === "An error has occurred.") {
         alert("An error has occurred.");
         sendResponse({ answer: true });
-    } else if (request.threatDetected) {
-        alert("This URL has been blocked by ExtenAlert!");
+    } else if (request.threatDetected === "High") {
+        alert("This URL has been blocked by ExtenAlert! High Threat Level");
         sendResponse({ answer: true });
+    } else if(request.threatDetected === "Moderate"){
+        const userResponse = confirm("This URL has been blocked by ExtenAlert! Moderate Threat Level. Do you still wanna browse this URL?");
+        sendResponse({ answer: userResponse });
     } else if (request.confirmation === "success") {
         alert("Successfully added!");
         sendResponse({ answer: true });
