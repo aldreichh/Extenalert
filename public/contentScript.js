@@ -26,6 +26,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     } else if(request.isUnrated){
         const userResponse = confirm("This is an unrated website, Do you want to continue browsing?");
         sendResponse({ answer: userResponse });
+    } else if(request.isNoThreatLevel){
+        const userResponse = confirm("This website has been blocked, but no specific threat level was detected. It is recommended to close this website to ensure your safety. Do you want to continue?");
+        sendResponse({ answer: userResponse });
     } else if (request.promptError === "An error has occurred.") {
         alert("An error has occurred.");
         sendResponse({ answer: true });

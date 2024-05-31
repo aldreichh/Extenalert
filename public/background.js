@@ -132,6 +132,20 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
                             }
                         });
                     }
+                    else{
+                        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                        await sendMessageWithResponse(tabs[0].id, { isNoThreatLevel: true}, (response) => {
+                            if (response?.answer === true ) {
+                                
+                            }
+                            else{
+                                const tabId = tabs[0].id;
+                                chrome.tabs.remove(tabId, () => {
+                                    console.log(`Tab with ID ${tabId} has been closed.`);
+                                });
+                            }
+                        });
+                    }
                 } catch (error) {
                     console.error('Error sending message to content script:', error);
                 }
