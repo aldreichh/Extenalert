@@ -26,6 +26,7 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
                 baseUrl.startsWith("file:///")) {
                 return;
             }
+         
             //Check if the URL is whitelisted
             const alreadyVisited = storedData.some(item => item.url === baseUrl);
             let isWhitelistedURL = false;
@@ -41,12 +42,40 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
             //Check if the URL is blacklisted
             const phishingURLs = blacklistedURLs.some(item => item.url === baseUrl);
             let isBlacklistedURL = false;
-            let blacklisted_threatlevel = "";
+            let blacklisted_threatlevel = ""
+
+            let isUnrated = false;
             try {
-                const isBlacklistedURL = await checkBlacklist(baseUrl);
+                isUnrated = await checkUnrated(baseUrl);
+            } catch (error) {
+                console.error('Error checking whitelist:', error);
+            }
+            let unratedResponse = false;
+            if(isUnrated){
+                const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                await sendMessageWithResponse(tabs[0].id, { isUnrated: isUnrated}, (response) => {
+                    if (response?.answer === true) {
+                        unratedResponse = true;
+                    }
+                    else if(response?.answer === false){
+                        const tabId = tabs[0].id;
+                        chrome.tabs.remove(tabId, () => {
+                            console.log(`Tab with ID ${tabId} has been closed.`);
+                        });
+                    }
+                });
+            }
+            
+            if(unratedResponse){
+                return;
+            }
+
+            try {
+                isBlacklistedURL = await checkBlacklist(baseUrl);
                 if (isBlacklistedURL) {
                     blacklisted_threatlevel = await fetchThreatLevel(baseUrl);
                     console.log(`Threat level for ${baseUrl}: ${blacklisted_threatlevel}`);
+                    
                 }
             } catch (error) {
                 console.error('Error checking blacklist:', error);
@@ -89,6 +118,20 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
                             }
                         });
                     }
+                    else if(isUnrated){
+                        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                        await sendMessageWithResponse(tabs[0].id, { isUnrated: true}, (response) => {
+                            if (response?.answer === true ) {
+                                
+                            }
+                            else{
+                                const tabId = tabs[0].id;
+                                chrome.tabs.remove(tabId, () => {
+                                    console.log(`Tab with ID ${tabId} has been closed.`);
+                                });
+                            }
+                        });
+                    }
                 } catch (error) {
                     console.error('Error sending message to content script:', error);
                 }
@@ -110,7 +153,32 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
 
                             try {
                                 const fetchResponse = await fetch(url);
+                                if (!fetchResponse.ok) {
+                                    throw new Error(`HTTP error! Status: ${fetchResponse.status}`);
+                                }
+                        
                                 const data = await fetchResponse.json();
+                        
+                                // Check if the URL is unrated
+                                if (data.response_code === 0) {
+                                    console.log('this page is unrated');
+                                    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                                    await sendMessageWithResponse(tabs[0].id, { threatLevel: "Unrated Threat Level" }, async (response) => {
+                                        if(response?.answer===true){
+                                            const status = 'unrated';
+                                            await addDataToServerUnrated(baseUrl, status);
+                                            const listToUpdate = blacklistedURLs;
+                                            listToUpdate.push({ id: Date.now(), url: baseUrl });                                                                                 
+                                            await chrome.storage.local.set({ 'BlacklistedURLs': listToUpdate });
+                                            const tabId = tabs[0].id;
+                                            chrome.tabs.remove(tabId, () => {
+                                                console.log(`Tab with ID ${tabId} has been closed.`);
+                                            });
+                                        }
+                                        console.log("User Response", response?.answer);
+                                    });
+                                    return;
+                                }
 
                                 //Get the threat level by calling the getThreatLevel function
                                 const threatLevel = getThreatLevel(data);
@@ -150,8 +218,20 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
                                     }
                                 });
                             } catch (error) {
-                                await sendMessageWithResponse(tabs[0].id, { promptError: 'An error has occurred.' }, (response) => {
+                                console.error('An error occurred:', error.message);
+                                let errorMessage = 'An error has occurred.';
+                            
+                                if (error instanceof TypeError) {
+                                    errorMessage = 'There was a network error. Please check your connection.';
+                                } else if (error instanceof SyntaxError) {
+                                    errorMessage = 'There was an error parsing the response. The data might be malformed.';
+                                } else if (error.message.includes('HTTP error!')) {
+                                    errorMessage = `Server returned an error: ${error.message}`;
+                                }
+                            
+                                await sendMessageWithResponse(tabs[0].id, { promptError: errorMessage }, (response) => {
                                     console.log("User Response", response?.answer);
+                                    console.log(data);
                                 });
                             }
                         } else {
@@ -200,7 +280,7 @@ async function fetchThreatLevel(url) {
     }
   }  
 
-// Function to add data to server
+//Function to add data to server
 async function addDataToServer(url, status, threat_level) {
     console.log(threat_level);
     try {
@@ -210,6 +290,27 @@ async function addDataToServer(url, status, threat_level) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ url, status, threat_level}),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            console.log('Data added successfully:', data.message);
+        } else {
+            console.error('Failed to add data:', data.error);
+        }
+    } catch (error) {
+        console.error('Error adding data to server:', error);
+    }
+}
+
+//Function to add data to server
+async function addDataToServerUnrated(url, status) {
+    try {
+        const response = await fetch('http://localhost:5000/add-data-unrated', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url, status}),
         });
         const data = await response.json();
         if (response.ok) {
@@ -239,6 +340,18 @@ async function checkBlacklist(url) {
         const response = await fetch(`http://localhost:5000/check-blacklist?url=${encodeURIComponent(url)}`);
         const data = await response.json();
         return data.isBlacklisted;
+    } catch (error) {
+        console.error('Error checking blacklist:', error);
+        return false;
+    }
+}
+
+// Function to check if a URL is blacklisted
+async function checkUnrated(url) {
+    try {
+        const response = await fetch(`http://localhost:5000/check-unrated?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+        return data.isUnrated;
     } catch (error) {
         console.error('Error checking blacklist:', error);
         return false;

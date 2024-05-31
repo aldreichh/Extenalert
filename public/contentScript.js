@@ -11,6 +11,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             message = "Scan completed. This URL is considered a Moderate Threat Level and is deemed UNSAFE for browsing. Do you want to add this URL to the blacklisted URLs and terminate this tab?";
         } else if (request.threatLevel === "High Threat Level") {
             message = "Scan completed. This URL is considered a High Threat Level and is deemed UNSAFE for browsing. ExtenAlert! recommends closing this tab immediately. Would you like to close this tab and add it to the blacklisted URLs?";
+        } else if (request.threatLevel === "Unrated Threat Level") {
+            message = "Scan completed. This URL is unrated. It is recommended to exercise caution when visiting unrated URLs as they may pose potential risks. Would you like to close this tab and add the URL to the blacklisted URLs?";
         }
         if(request.threatLevel === "High Threat Level"){
             const userResponse = alert(message);
@@ -20,7 +22,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             const userResponse = confirm(message);
             sendResponse({ answer: userResponse });
         }
-
+        
+    } else if(request.isUnrated){
+        const userResponse = confirm("This is an unrated website, Do you want to continue browsing?");
+        sendResponse({ answer: userResponse });
     } else if (request.promptError === "An error has occurred.") {
         alert("An error has occurred.");
         sendResponse({ answer: true });

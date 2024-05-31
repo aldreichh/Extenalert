@@ -37,10 +37,10 @@ function BlacklistedUrls () {
     }
 
     // Retrieve the current whitelist from local storage
-    const whitelist = JSON.parse(localStorage.getItem('blacklisted_urls')) || [];
+    const blacklist = JSON.parse(localStorage.getItem('blacklisted_urls')) || [];
 
     // Check if baseUrl exists in the whitelist
-    if (whitelist.includes(baseUrl)) {
+    if (blacklist.includes(baseUrl)) {
         console.log('Base URL already exists in local storage:', baseUrl);
         return; // Exit the function as the baseUrl already exists
     }
@@ -57,9 +57,9 @@ function BlacklistedUrls () {
         if (response.ok) {
             const data = await response.json();
             console.log('Data added successfully:', data);
-            // Add baseUrl to the whitelist and store it in local storage
-            whitelist.push(baseUrl);
-            localStorage.setItem('blacklisted_urls', JSON.stringify(whitelist));
+            // Add baseUrl to the blacklist and store it in local storage
+            blacklist.push(baseUrl);
+            localStorage.setItem('blacklisted_urls', JSON.stringify(blacklist));
         } else {
             const data = await response.json();
             console.error('Failed to add data:', data.error);
