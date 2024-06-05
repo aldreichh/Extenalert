@@ -1,5 +1,5 @@
 console.log('Background script executing...');
-
+let drivebychecker = "Active";
 // PHISHING URL SCANNING USING VIRUSTOTAL API
 chrome.webNavigation.onCompleted.addListener(async function(details) {
     try {
@@ -10,7 +10,8 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
         const status = result.ExtensionStatus || "Active";
         const api = result.UserAPIkey || 'e606af073d0c541c38b356e1f3590364cde310c12f202bf4b731c73ab02246d8';
         await chrome.storage.local.set({ 'currentUrl': details.url });
-
+        drivebychecker = status;
+        
         if (details.frameId === 0 && status === "Active") {
             const tab = await chrome.tabs.get(details.tabId);
             console.log('URL after full load:', tab.url);
@@ -265,6 +266,8 @@ chrome.webNavigation.onCompleted.addListener(async function(details) {
     }
 });
 
+console.log(drivebychecker);
+
 // Function to send message to content script and handle errors
 async function sendMessageWithResponse(tabId, message, callback) {
     try {
@@ -391,24 +394,29 @@ let isDriveByDownload = false;
 
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.url && message.userInitiated) {
-        userInitiatedDownloads.add(message.url);
-        sendResponse({ status: 'URL added' });
+    if(drivebychecker === "Active"){
+        if (message.url && message.userInitiated) {
+            userInitiatedDownloads.add(message.url);
+            sendResponse({ status: 'URL added' });
+        }
     }
 });
 
 // Listen for new downloads
 chrome.downloads.onCreated.addListener((downloadItem) => {
-    if (userInitiatedDownloads.has(downloadItem.url)) {
-        console.log(`User-initiated download detected: ${downloadItem.url}`);
-        userInitiatedDownloads.delete(downloadItem.url);
-    } else {
-        console.log(`Drive-by download detected: ${downloadItem.url}`);
-        isDriveByDownload = true;
-        handleDriveByDownload(isDriveByDownload);
-        // Cancel the download
-        chrome.downloads.cancel(downloadItem.id);
+    if(drivebychecker==="Active"){
+        if (userInitiatedDownloads.has(downloadItem.url)) {
+            console.log(`User-initiated download detected: ${downloadItem.url}`);
+            userInitiatedDownloads.delete(downloadItem.url);
+        } else {
+            console.log(`Drive-by download detected: ${downloadItem.url}`);
+            isDriveByDownload = true;
+            handleDriveByDownload(isDriveByDownload);
+            // Cancel the download
+            chrome.downloads.cancel(downloadItem.id);
+        }
     }
+    else return;
 });
 
 function handleDriveByDownload(isDriveByDownload) {
